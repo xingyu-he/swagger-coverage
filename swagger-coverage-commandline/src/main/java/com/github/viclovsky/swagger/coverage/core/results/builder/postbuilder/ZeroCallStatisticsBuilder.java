@@ -49,12 +49,12 @@ public class ZeroCallStatisticsBuilder extends StatisticsOperationPostBuilder {
     }
 
     /**
-     * 检查操作是否应该被排除
-     * 支持格式：
-     * 1. "GET /api/users" - 指定 HTTP 方法和路径
-     * 2. "/api/users" - 仅路径（匹配所有 HTTP 方法）
-     * 3. "/api/users/*" - 通配符路径
-     * 4. "GET /api/users/*" - HTTP 方法 + 通配符路径
+     * Check if an operation should be excluded
+     * Supported formats:
+     * 1. "GET /api/users" - HTTP method and path
+     * 2. "/api/users" - path only (matches all HTTP methods)
+     * 3. "/api/users/*" - wildcard path
+     * 4. "GET /api/users/*" - HTTP method + wildcard path
      */
     private boolean isExcluded(OperationKey operation) {
         if (excludedOperations == null || excludedOperations.isEmpty()) {
@@ -67,11 +67,11 @@ public class ZeroCallStatisticsBuilder extends StatisticsOperationPostBuilder {
         for (String excluded : excludedOperations) {
             String trimmedExcluded = excluded.trim();
             
-            // 检查是否包含 HTTP 方法
+            // Check if HTTP method is included
             String[] parts = trimmedExcluded.split("\\s+", 2);
             
             if (parts.length == 2) {
-                // 格式: "GET /api/users/*"
+                // Format: "GET /api/users/*"
                 String method = parts[0].toUpperCase();
                 String path = parts[1];
                 
@@ -80,7 +80,7 @@ public class ZeroCallStatisticsBuilder extends StatisticsOperationPostBuilder {
                     return true;
                 }
             } else {
-                // 格式: "/api/users/*" (匹配所有 HTTP 方法)
+                // Format: "/api/users/*" (matches all HTTP methods)
                 String path = parts[0];
                 
                 if (pathMatcher.match(path, operationPath)) {

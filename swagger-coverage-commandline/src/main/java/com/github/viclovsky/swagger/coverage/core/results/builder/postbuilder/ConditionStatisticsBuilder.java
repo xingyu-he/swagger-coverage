@@ -37,7 +37,7 @@ public class ConditionStatisticsBuilder extends StatisticsOperationPostBuilder {
 
     @Override
     public void buildOperation(OperationKey operation, OperationResult operationResult) {
-        // 如果操作被排除，跳过统计
+        // Skip statistics if operation is excluded
         if (isExcluded(operation)) {
             LOGGER.debug("Operation [{}] is excluded from statistics", operation);
             return;
@@ -69,7 +69,7 @@ public class ConditionStatisticsBuilder extends StatisticsOperationPostBuilder {
     }
 
     /**
-     * 检查操作是否应该被排除（与 ZeroCallStatisticsBuilder 保持一致）
+     * Check if an operation should be excluded (consistent with ZeroCallStatisticsBuilder)
      */
     private boolean isExcluded(OperationKey operation) {
         if (excludedOperations == null || excludedOperations.isEmpty()) {
@@ -82,11 +82,11 @@ public class ConditionStatisticsBuilder extends StatisticsOperationPostBuilder {
         for (String excluded : excludedOperations) {
             String trimmedExcluded = excluded.trim();
             
-            // 检查是否包含 HTTP 方法
+            // Check if HTTP method is included
             String[] parts = trimmedExcluded.split("\\s+", 2);
             
             if (parts.length == 2) {
-                // 格式: "GET /api/users/*"
+                // Format: "GET /api/users/*"
                 String method = parts[0].toUpperCase();
                 String path = parts[1];
                 
@@ -94,7 +94,7 @@ public class ConditionStatisticsBuilder extends StatisticsOperationPostBuilder {
                     return true;
                 }
             } else {
-                // 格式: "/api/users/*" (匹配所有 HTTP 方法)
+                // Format: "/api/users/*" (matches all HTTP methods)
                 String path = parts[0];
                 
                 if (pathMatcher.match(path, operationPath)) {
