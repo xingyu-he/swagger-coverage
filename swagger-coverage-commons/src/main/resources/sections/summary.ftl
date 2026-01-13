@@ -18,7 +18,7 @@
         </div>
         <div class="col-sm">
             <div class="alert alert-secondary" role="alert">
-                ${i18["summary.operations.no_call"]}: ${data.zeroCall?size}
+                ${i18["summary.operations.no_call"]}: ${data.zeroCall?size}<#if (data.excludedOperationsCount > 0)> <small class="text-muted">(excluded: ${data.excludedOperationsCount})</small></#if>
             </div>
         </div>
         <div class="col-sm">

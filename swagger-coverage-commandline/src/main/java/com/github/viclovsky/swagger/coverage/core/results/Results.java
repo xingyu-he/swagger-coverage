@@ -25,6 +25,8 @@ public class Results {
     private Map<OperationKey, Operation> deprecated = new TreeMap<>();
     private Map<String, ConditionStatistics> conditionStatisticsMap = new HashMap<>();
     private Set<OperationKey> zeroCall = new HashSet<>();
+    private Set<OperationKey> excludedOperations = new HashSet<>();
+    private int excludedOperationsCount = 0;
 
     private GenerationStatistics generationStatistics;
     private CoverageOperationMap coverageOperationMap = new CoverageOperationMap();
@@ -160,6 +162,24 @@ public class Results {
 
     public Results setInfo(Info info) {
         this.info = info;
+        return this;
+    }
+
+    public int getExcludedOperationsCount() {
+        return excludedOperationsCount;
+    }
+
+    public Results setExcludedOperationsCount(int excludedOperationsCount) {
+        this.excludedOperationsCount = excludedOperationsCount;
+        return this;
+    }
+
+    public Set<OperationKey> getExcludedOperations() {
+        return excludedOperations;
+    }
+
+    public Results setExcludedOperations(Set<OperationKey> excludedOperations) {
+        this.excludedOperations = excludedOperations;
         return this;
     }
 }

@@ -94,4 +94,8 @@ public class Configuration {
         this.configuredResultsWriters = configuredResultsWriters;
         return this;
     }
+
+    public List<String> getExcludedOperations() {
+        return options.getExcludedOperations();
+    }
 }

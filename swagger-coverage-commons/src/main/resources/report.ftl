@@ -135,6 +135,14 @@
                                 ${i18["operations.deprecated"]}: ${data.deprecated?size}
                             </a>
                         </li>
+                        <#if (data.excludedOperations?size > 0)>
+                        <li class="nav-item">
+                            <a class="nav-link" id="excluded-tab" data-toggle="tab" href="#excluded" role="tab"
+                               aria-controls="excluded" aria-selected="false">
+                                Excluded: ${data.excludedOperations?size}
+                            </a>
+                        </li>
+                        </#if>
                     </ul>
                 </div>
             </div>
@@ -165,6 +173,14 @@
                         <div class="tab-pane fade" id="deprecated" role="tabpanel" aria-labelledby="deprecated-tab">
                             <@operations.list coverage=data.deprecated prefix="deprecated"/>
                         </div>
+                        <#if (data.excludedOperations?size > 0)>
+                        <div class="tab-pane fade" id="excluded" role="tabpanel" aria-labelledby="excluded-tab">
+                            <div class="alert alert-info" role="alert">
+                                <strong>Excluded Operations:</strong> These operations were excluded from coverage statistics based on configuration.
+                            </div>
+                            <@condition.list coverage=data.excludedOperations prefix="excluded"/>
+                        </div>
+                        </#if>
                     </div>
                 </div>
             </div>
