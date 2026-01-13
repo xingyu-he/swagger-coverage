@@ -23,6 +23,11 @@
       "enable" : true
     }
   },
+  "excludedOperations": [
+    "/api/internal/*",
+    "GET /api/health",
+    "/api/admin/**"
+  ],
   "writers": {
     "html": {
       "filename": "custom-report.html",
