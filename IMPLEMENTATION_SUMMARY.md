@@ -1,24 +1,24 @@
-# 排除 API 功能实现总结
+# Exclude API Feature Implementation Summary
 
-## 📋 功能概述
+## 📋 Feature Overview
 
-实现了允许用户在配置文件中指定需要排除的 API 操作的功能，这些被排除的 API 将不会被统计到 "Empty Coverage"（零调用/未覆盖的 API）中。
+Implemented functionality that allows users to specify API operations to be excluded in the configuration file. These excluded APIs will not be counted in "Empty Coverage" (zero calls/uncovered APIs).
 
-## 🔧 实现的更改
+## 🔧 Implemented Changes
 
 ### 1. ConfigurationOptions.java
-**文件路径**: `swagger-coverage-commandline/src/main/java/com/github/viclovsky/swagger/coverage/configuration/options/ConfigurationOptions.java`
+**File Path**: `swagger-coverage-commandline/src/main/java/com/github/viclovsky/swagger/coverage/configuration/options/ConfigurationOptions.java`
 
-**更改内容**:
+**Changes**:
 ```java
-// 新增字段
+// New field
 private List<String> excludedOperations = new ArrayList<>();
 
-// 新增方法
+// New methods
 public List<String> getExcludedOperations() { ... }
 public ConfigurationOptions setExcludedOperations(List<String> excludedOperations) { ... }
 
-// 更新 toString() 方法
+// Updated toString() method
 @Override
 public String toString() {
     return "ConfigurationOptions{" +
@@ -29,31 +29,31 @@ public String toString() {
 }
 ```
 
-**作用**: 在配置选项中添加了存储排除操作列表的能力。
+**Purpose**: Added capability to store the list of excluded operations in configuration options.
 
 ---
 
 ### 2. Configuration.java
-**文件路径**: `swagger-coverage-commandline/src/main/java/com/github/viclovsky/swagger/coverage/configuration/Configuration.java`
+**File Path**: `swagger-coverage-commandline/src/main/java/com/github/viclovsky/swagger/coverage/configuration/Configuration.java`
 
-**更改内容**:
+**Changes**:
 ```java
-// 新增方法
+// New method
 public List<String> getExcludedOperations() {
     return options.getExcludedOperations();
 }
 ```
 
-**作用**: 提供访问排除操作列表的接口，方便其他组件使用。
+**Purpose**: Provides an interface to access the excluded operations list for use by other components.
 
 ---
 
-### 3. ZeroCallStatisticsBuilder.java ⭐ (核心实现)
-**文件路径**: `swagger-coverage-commandline/src/main/java/com/github/viclovsky/swagger/coverage/core/results/builder/postbuilder/ZeroCallStatisticsBuilder.java`
+### 3. ZeroCallStatisticsBuilder.java ⭐ (Core Implementation)
+**File Path**: `swagger-coverage-commandline/src/main/java/com/github/viclovsky/swagger/coverage/core/results/builder/postbuilder/ZeroCallStatisticsBuilder.java`
 
-**更改内容**:
+**Changes**:
 
-#### 新增导入
+#### New Imports
 ```java
 import com.github.viclovsky.swagger.coverage.configuration.Configuration;
 import org.slf4j.Logger;
@@ -62,14 +62,14 @@ import org.springframework.util.AntPathMatcher;
 import java.util.List;
 ```
 
-#### 新增字段
+#### New Fields
 ```java
 private static final Logger LOGGER = LoggerFactory.getLogger(ZeroCallStatisticsBuilder.class);
 private static final AntPathMatcher pathMatcher = new AntPathMatcher();
 private List<String> excludedOperations;
 ```
 
-#### 重写 build 方法
+#### Override build Method
 ```java
 @Override
 public void build(Results results, Configuration configuration) {
@@ -78,7 +78,7 @@ public void build(Results results, Configuration configuration) {
 }
 ```
 
-#### 修改 buildOperation 方法
+#### Modified buildOperation Method
 ```java
 @Override
 public void buildOperation(OperationKey operation, OperationResult operationResult) {
@@ -88,15 +88,15 @@ public void buildOperation(OperationKey operation, OperationResult operationResu
 }
 ```
 
-#### 新增 isExcluded 方法（核心逻辑）
+#### New isExcluded Method (Core Logic)
 ```java
 /**
- * 检查操作是否应该被排除
- * 支持格式：
- * 1. "GET /api/users" - 指定 HTTP 方法和路径
- * 2. "/api/users" - 仅路径（匹配所有 HTTP 方法）
- * 3. "/api/users/*" - 通配符路径
- * 4. "GET /api/users/*" - HTTP 方法 + 通配符路径
+ * Check if an operation should be excluded
+ * Supported formats:
+ * 1. "GET /api/users" - HTTP method and path
+ * 2. "/api/users" - path only (matches all HTTP methods)
+ * 3. "/api/users/*" - wildcard path
+ * 4. "GET /api/users/*" - HTTP method + wildcard path
  */
 private boolean isExcluded(OperationKey operation) {
     if (excludedOperations == null || excludedOperations.isEmpty()) {
@@ -109,11 +109,11 @@ private boolean isExcluded(OperationKey operation) {
     for (String excluded : excludedOperations) {
         String trimmedExcluded = excluded.trim();
         
-        // 检查是否包含 HTTP 方法
+        // Check if HTTP method is included
         String[] parts = trimmedExcluded.split("\\s+", 2);
         
         if (parts.length == 2) {
-            // 格式: "GET /api/users/*"
+            // Format: "GET /api/users/*"
             String method = parts[0].toUpperCase();
             String path = parts[1];
             
@@ -122,7 +122,7 @@ private boolean isExcluded(OperationKey operation) {
                 return true;
             }
         } else {
-            // 格式: "/api/users/*" (匹配所有 HTTP 方法)
+            // Format: "/api/users/*" (matches all HTTP methods)
             String path = parts[0];
             
             if (pathMatcher.match(path, operationPath)) {
@@ -136,14 +136,14 @@ private boolean isExcluded(OperationKey operation) {
 }
 ```
 
-**作用**: 实现核心的排除逻辑，支持多种匹配模式。
+**Purpose**: Implements core exclusion logic supporting multiple matching patterns.
 
 ---
 
-### 4. full_configuration.json (测试配置)
-**文件路径**: `swagger-coverage-commandline/src/test/resources/full_configuration.json`
+### 4. full_configuration.json (Test Configuration)
+**File Path**: `swagger-coverage-commandline/src/test/resources/full_configuration.json`
 
-**更改内容**:
+**Changes**:
 ```json
 {
   "rules": { ... },
@@ -156,51 +156,51 @@ private boolean isExcluded(OperationKey operation) {
 }
 ```
 
-**作用**: 提供配置示例，展示如何使用新功能。
+**Purpose**: Provides configuration examples demonstrating how to use the new feature.
 
 ---
 
-## ✨ 功能特性
+## ✨ Feature Highlights
 
-### 支持的匹配模式
+### Supported Matching Patterns
 
-1. **精确路径匹配**
+1. **Exact Path Matching**
    ```json
    "/api/users"
    ```
-   匹配所有 HTTP 方法的 `/api/users` 路径
+   Matches all HTTP methods for the `/api/users` path
 
-2. **HTTP 方法 + 路径**
+2. **HTTP Method + Path**
    ```json
    "GET /api/users"
    ```
-   仅匹配 GET 方法的 `/api/users` 路径
+   Matches only GET method for the `/api/users` path
 
-3. **单层通配符 (*)**
+3. **Single-Level Wildcard (*)**
    ```json
    "/api/internal/*"
    ```
-   - ✅ 匹配 `/api/internal/debug`
-   - ❌ 不匹配 `/api/internal/sub/path`
+   - ✅ Matches `/api/internal/debug`
+   - ❌ Does not match `/api/internal/sub/path`
 
-4. **多层通配符 (**)**
+4. **Multi-Level Wildcard (**)**
    ```json
    "/api/admin/**"
    ```
-   - ✅ 匹配 `/api/admin/users`
-   - ✅ 匹配 `/api/admin/sub/path`
+   - ✅ Matches `/api/admin/users`
+   - ✅ Matches `/api/admin/sub/path`
 
-### 关键优势
+### Key Advantages
 
-- ✅ **灵活的匹配模式**: 支持精确匹配、通配符匹配
-- ✅ **HTTP 方法支持**: 可以指定特定的 HTTP 方法
-- ✅ **向后兼容**: 不影响现有配置和功能
-- ✅ **调试友好**: 提供 DEBUG 日志输出
-- ✅ **性能优化**: 使用高效的 AntPathMatcher
+- ✅ **Flexible Matching Patterns**: Supports exact matching and wildcard matching
+- ✅ **HTTP Method Support**: Can specify specific HTTP methods
+- ✅ **Backward Compatible**: Does not affect existing configurations and functionality
+- ✅ **Debug-Friendly**: Provides DEBUG log output
+- ✅ **Performance Optimized**: Uses efficient AntPathMatcher
 
-## 📝 配置示例
+## 📝 Configuration Examples
 
-### 基本配置
+### Basic Configuration
 ```json
 {
   "excludedOperations": [
@@ -210,7 +210,7 @@ private boolean isExcluded(OperationKey operation) {
 }
 ```
 
-### 完整配置
+### Complete Configuration
 ```json
 {
   "excludedOperations": [
@@ -235,24 +235,24 @@ private boolean isExcluded(OperationKey operation) {
 }
 ```
 
-## 🧪 测试结果
+## 🧪 Test Results
 
-### 编译测试
+### Build Test
 ```bash
 ./gradlew :swagger-coverage-commandline:build
 ```
-**结果**: ✅ BUILD SUCCESSFUL
+**Result**: ✅ BUILD SUCCESSFUL
 
-### 单元测试
-所有现有测试通过，确保向后兼容性。
+### Unit Tests
+All existing tests pass, ensuring backward compatibility.
 
-### Lint 检查
-**结果**: ✅ No linter errors found
+### Lint Check
+**Result**: ✅ No linter errors found
 
-## 📖 使用说明
+## 📖 Usage Instructions
 
-### 步骤 1: 创建配置文件
-创建或修改 `configuration.json`:
+### Step 1: Create Configuration File
+Create or modify `configuration.json`:
 ```json
 {
   "excludedOperations": [
@@ -262,7 +262,7 @@ private boolean isExcluded(OperationKey operation) {
 }
 ```
 
-### 步骤 2: 运行命令
+### Step 2: Run Command
 ```bash
 java -jar swagger-coverage-commandline.jar \
   -s /path/to/swagger.yaml \
@@ -270,11 +270,11 @@ java -jar swagger-coverage-commandline.jar \
   -c configuration.json
 ```
 
-### 步骤 3: 查看结果
-生成的报告中，被排除的 API 不会出现在 "Empty Coverage" 部分。
+### Step 3: View Results
+In the generated report, excluded APIs will not appear in the "Empty Coverage" section.
 
-### 调试模式
-启用 DEBUG 日志查看排除详情：
+### Debug Mode
+Enable DEBUG logging to view exclusion details:
 ```bash
 java -jar swagger-coverage-commandline.jar \
   -s /path/to/swagger.yaml \
@@ -283,35 +283,35 @@ java -jar swagger-coverage-commandline.jar \
   --verbose
 ```
 
-## 🔍 技术细节
+## 🔍 Technical Details
 
-### 匹配算法
-使用 Spring Framework 的 `AntPathMatcher` 类实现路径匹配：
-- 高性能
-- 成熟稳定
-- 支持标准的 Ant 风格路径模式
+### Matching Algorithm
+Uses Spring Framework's `AntPathMatcher` class for path matching:
+- High performance
+- Mature and stable
+- Supports standard Ant-style path patterns
 
-### 处理流程
-1. 加载配置文件中的 `excludedOperations` 列表
-2. 在 `ZeroCallStatisticsBuilder.build()` 中初始化排除列表
-3. 对每个 `processCount == 0` 的操作调用 `isExcluded()` 检查
-4. 如果匹配排除模式，跳过该操作；否则添加到零调用列表
-5. 生成最终报告时，零调用列表中不包含被排除的操作
+### Processing Flow
+1. Load the `excludedOperations` list from configuration file
+2. Initialize exclusion list in `ZeroCallStatisticsBuilder.build()`
+3. For each operation with `processCount == 0`, call `isExcluded()` to check
+4. If matches exclusion pattern, skip the operation; otherwise add to zero-call list
+5. When generating final report, zero-call list does not include excluded operations
 
-### 性能影响
-- 排除检查仅对零调用的操作执行
-- 使用高效的 `AntPathMatcher` 进行匹配
-- 对正常覆盖的操作无影响
+### Performance Impact
+- Exclusion checks are only performed on zero-call operations
+- Uses efficient `AntPathMatcher` for matching
+- No impact on normally covered operations
 
-## 📄 相关文档
+## 📄 Related Documentation
 
-1. **EXCLUDE_OPERATIONS_FEATURE.md**: 详细的功能说明文档
-2. **EXCLUDE_FEATURE_DIAGRAM.md**: 流程图和架构图
-3. **full_configuration.json**: 完整的配置示例
+1. **EXCLUDE_OPERATIONS_FEATURE_EN.md**: Detailed feature documentation
+2. **EXCLUDE_FEATURE_DIAGRAM_EN.md**: Flowcharts and architecture diagrams
+3. **full_configuration.json**: Complete configuration examples
 
-## 🎯 适用场景
+## 🎯 Use Cases
 
-### 场景 1: 排除健康检查
+### Use Case 1: Exclude Health Checks
 ```json
 {
   "excludedOperations": [
@@ -321,7 +321,7 @@ java -jar swagger-coverage-commandline.jar \
 }
 ```
 
-### 场景 2: 排除内部 API
+### Use Case 2: Exclude Internal APIs
 ```json
 {
   "excludedOperations": [
@@ -331,7 +331,7 @@ java -jar swagger-coverage-commandline.jar \
 }
 ```
 
-### 场景 3: 排除管理端点
+### Use Case 3: Exclude Admin Endpoints
 ```json
 {
   "excludedOperations": [
@@ -342,7 +342,7 @@ java -jar swagger-coverage-commandline.jar \
 }
 ```
 
-### 场景 4: 排除特定方法
+### Use Case 4: Exclude Specific Methods
 ```json
 {
   "excludedOperations": [
@@ -352,24 +352,24 @@ java -jar swagger-coverage-commandline.jar \
 }
 ```
 
-## 🚀 未来扩展建议
+## 🚀 Future Enhancement Suggestions
 
-1. **正则表达式支持**: 更强大的匹配能力
-2. **标签过滤**: 基于 Swagger 标签排除
-3. **外部文件**: 从独立文件加载排除规则
-4. **条件排除**: 基于条件的动态排除
-5. **排除统计**: 报告中显示被排除的操作数量
+1. **Regular Expression Support**: More powerful matching capabilities
+2. **Tag Filtering**: Exclude based on Swagger tags
+3. **External Files**: Load exclusion rules from separate files
+4. **Conditional Exclusion**: Dynamic exclusion based on conditions
+5. **Exclusion Statistics**: Display count of excluded operations in report
 
-## 📊 总结
+## 📊 Summary
 
-✅ **功能完整**: 实现了排除 API 的核心功能
-✅ **代码质量**: 通过所有测试和 Lint 检查
-✅ **文档完善**: 提供详细的使用文档和流程图
-✅ **向后兼容**: 不影响现有功能和配置
-✅ **易于使用**: 简单的 JSON 配置即可使用
+✅ **Feature Complete**: Implemented core API exclusion functionality
+✅ **Code Quality**: Passes all tests and lint checks
+✅ **Well Documented**: Provides detailed usage documentation and flowcharts
+✅ **Backward Compatible**: Does not affect existing functionality and configurations
+✅ **Easy to Use**: Simple JSON configuration for usage
 
 ---
 
-**实现日期**: 2026-01-12
-**版本**: swagger-coverage-commandline
-**作者**: Grace.He
+**Implementation Date**: 2026-01-12
+**Version**: swagger-coverage-commandline
+**Author**: Grace.He
