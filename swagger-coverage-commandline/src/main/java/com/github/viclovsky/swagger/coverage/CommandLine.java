@@ -72,7 +72,7 @@ public class CommandLine {
         }
 
         new Generator().setInputPath(mainOptions.getInputPath())
-                .setSpecPath(mainOptions.getSpecPath())
+                .setSpecPaths(mainOptions.getSpecPaths())
                 .setConfigurationPath(mainOptions.getConfiguration())
                 .run();
 

@@ -8,6 +8,8 @@ import com.github.viclovsky.swagger.coverage.core.results.Results;
 import com.github.viclovsky.swagger.coverage.core.results.builder.core.StatisticsBuilder;
 import io.swagger.parser.OpenAPIParser;
 import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.oas.models.PathItem;
+import io.swagger.v3.oas.models.Paths;
 import io.swagger.v3.parser.core.models.AuthorizationValue;
 import io.swagger.v3.parser.core.models.ParseOptions;
 import io.swagger.v3.parser.core.models.SwaggerParseResult;
@@ -23,7 +25,7 @@ public class Generator {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(Generator.class);
 
-    private URI specPath;
+    private List<URI> specPaths = new ArrayList<>();
     private List<AuthorizationValue> specAuths;
 
     private Path inputPath;
@@ -38,12 +40,51 @@ public class Generator {
         Configuration configuration = ConfigurationBuilder.build(configurationPath);
         ParseOptions parseOptions = new ParseOptions();
         parseOptions.setResolve(true);
-        SwaggerParseResult parsed = parser.readLocation(specPath.toString(), specAuths, parseOptions);
-        parsed.getMessages().forEach(LOGGER::info);
-        OpenAPI spec = parsed.getOpenAPI();
+        
+        // Parse and merge multiple specs
+        OpenAPI mergedSpec = null;
+        for (URI specPath : specPaths) {
+            LOGGER.info("Loading spec from: {}", specPath);
+            SwaggerParseResult parsed = parser.readLocation(specPath.toString(), specAuths, parseOptions);
+            parsed.getMessages().forEach(LOGGER::info);
+            OpenAPI spec = parsed.getOpenAPI();
+            
+            if (spec == null) {
+                LOGGER.warn("Failed to parse spec from: {}", specPath);
+                continue;
+            }
+            
+            if (mergedSpec == null) {
+                mergedSpec = spec;
+                LOGGER.info("Using spec from {} as base", specPath);
+            } else {
+                // Merge paths from this spec into the merged spec
+                if (spec.getPaths() != null) {
+                    if (mergedSpec.getPaths() == null) {
+                        mergedSpec.setPaths(new Paths());
+                    }
+                    for (String path : spec.getPaths().keySet()) {
+                        PathItem pathItem = spec.getPaths().get(path);
+                        if (mergedSpec.getPaths().containsKey(path)) {
+                            LOGGER.warn("Path {} already exists in merged spec, skipping from {}", path, specPath);
+                        } else {
+                            mergedSpec.getPaths().addPathItem(path, pathItem);
+                            LOGGER.debug("Added path {} from {}", path, specPath);
+                        }
+                    }
+                }
+                LOGGER.info("Merged spec from {}, total paths: {}", specPath, 
+                    mergedSpec.getPaths() != null ? mergedSpec.getPaths().size() : 0);
+            }
+        }
+        
+        if (mergedSpec == null) {
+            throw new IllegalStateException("Failed to load any valid spec files");
+        }
 
-        LOGGER.info("spec is {}", spec);
-        statisticsBuilders = configuration.getStatisticsBuilders(spec);
+        LOGGER.info("Final merged spec has {} paths", 
+            mergedSpec.getPaths() != null ? mergedSpec.getPaths().size() : 0);
+        statisticsBuilders = configuration.getStatisticsBuilders(mergedSpec);
 
         CoverageOutputReader reader = new FileSystemOutputReader(getInputPath());
         reader.getOutputs().forEach(this::processFile);
@@ -67,12 +108,12 @@ public class Generator {
                 builder.add(path.toString()).add(spec));
     }
 
-    public URI getSpecPath() {
-        return specPath;
+    public List<URI> getSpecPaths() {
+        return specPaths;
     }
 
-    public Generator setSpecPath(URI specPath) {
-        this.specPath = specPath;
+    public Generator setSpecPaths(List<URI> specPaths) {
+        this.specPaths = specPaths;
         return this;
     }
 

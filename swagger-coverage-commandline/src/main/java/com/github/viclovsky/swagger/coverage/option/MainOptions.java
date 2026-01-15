@@ -3,17 +3,22 @@ package com.github.viclovsky.swagger.coverage.option;
 import com.beust.jcommander.Parameter;
 
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.Arrays;
 
 public class MainOptions {
 
     @Parameter(
             names = {"-s", "--spec"},
-            description = "Path to local or URL to remote swagger specification.",
+            description = "Path to local or URL to remote swagger specification. Can be specified multiple times, or use comma-separated values (e.g., -s spec1.yaml,spec2.yaml or -s spec1.yaml -s spec2.yaml).",
             required = true,
             order = 0
     )
-    private URI specPath;
+    private List<String> specPathStrings = new ArrayList<>();
 
     @Parameter(
             names = {"-i", "--input"},
@@ -42,8 +47,24 @@ public class MainOptions {
         return help;
     }
 
-    public URI getSpecPath() {
-        return specPath;
+    public List<URI> getSpecPaths() {
+        // Parse and expand comma-separated values
+        List<URI> result = new ArrayList<>();
+        for (String pathString : specPathStrings) {
+            // Split by comma and trim whitespace
+            String[] paths = pathString.split(",");
+            for (String path : paths) {
+                String trimmed = path.trim();
+                if (!trimmed.isEmpty()) {
+                    try {
+                        result.add(new URI(trimmed));
+                    } catch (URISyntaxException e) {
+                        throw new IllegalArgumentException("Invalid URI: " + trimmed, e);
+                    }
+                }
+            }
+        }
+        return result;
     }
 
     public Path getInputPath() {

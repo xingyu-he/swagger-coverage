@@ -6,6 +6,7 @@ import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -99,7 +100,7 @@ public class SwaggerCoverageRunner extends Runner {
                 .setInputPath(inputPath);
             
             if (specificationPath != null) {
-                generator.setSpecPath(specificationPath);
+                generator.setSpecPaths(Collections.singletonList(specificationPath));
             }
             else{
                 File specFile = Optional.of(Paths.get(coverageDir, SPECIFICATION_NAME + ".json").toFile())
@@ -110,7 +111,7 @@ public class SwaggerCoverageRunner extends Runner {
                     throw new NoSuchElementException();
                 }
 
-                generator.setSpecPath(specFile.toURI()); 
+                generator.setSpecPaths(Collections.singletonList(specFile.toURI())); 
             }
 
             if (configPath != null){
